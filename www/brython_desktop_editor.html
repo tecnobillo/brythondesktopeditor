@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+
+<html lang='es'>
+
+<head>
+
+	<title>Brython Desktop Editor 1.0</title>
+	<link rel='shortcut icon' href='icon.ico'>
+	
+	<meta charset='utf-8'/>
+	<meta http-equiv="Cache-control" content="no-cache">
+
+	<script type='text/javascript' src='/eel.js'></script>
+	<script type='text/javascript' src='brython/brython.js'></script>
+	<script type='text/javascript' src='brython/brython_stdlib.js'></script>
+
+	<link rel="stylesheet" href="codemirror/lib/codemirror.css">
+	<script src="codemirror/lib/codemirror.js"></script>
+	<script src="codemirror/addon/edit/matchbrackets.js"></script>
+	<script src="codemirror/python.js"></script>
+
+	<link rel="stylesheet" href="alertify/alertify.min.css">
+	<script src="alertify/alertify.min.js"></script>
+
+	<style>
+
+		*:not(button){
+			margin:0px;
+			padding:0px;
+		}
+
+		#top_menu{
+			width:100vw;
+			height:3.9vh;
+			//border-bottom:1px solid grey;
+			display:flex;
+			flex-direction:row;
+		}
+
+		.top_menu_frame{
+			width:50%;
+			display:flex;
+			flex-direction:row;
+			justify-content:space-between;
+			align-items:center;
+			border-bottom:1px solid grey;
+		}
+
+		.top_buttom{
+			width:20%;
+			height:100%;
+			-webkit-user-select:none;
+			user-select:none;
+		}
+
+		#div_file_path{
+			width:82%;
+			height:100%;
+			background-color:#F0F8FF;
+			display:flex;
+			justify-content:center;
+			align-items:center;
+			font-size:10px;
+			font-family:'Oxygen Mono', Consolas, 'Liberation Mono', 'DejaVu Sans Mono', monospace;
+		}
+
+		#btn_stdout{
+			width:18%;
+			height:100%;
+			/*
+			-webkit-user-select:none;
+			user-select:none;
+			*/
+		}
+
+		#main{
+			width:100vw;
+			height:96vh;
+			display:flex;
+			flex-direction:row;
+			justify-content:space-between;
+			align-items:center;
+		}
+
+
+		#right{
+			background-color:white;
+			width:50%;
+			height:100%;
+		}
+
+
+		.pad_wrap{
+			border:0px;
+			width:100%;
+			height:100%;
+			background-color:white;
+			display:flex;
+			justify-content:left;
+			align-items:center;
+		}
+
+
+		.CodeMirror{
+			resize:horizontal;
+			overflow-x:auto !important;
+			overflow-y:hidden !important;
+			width:50%;
+			max-width:50% !important;
+			height:100%;
+			font-family:'Oxygen Mono', Consolas, 'Liberation Mono', 'DejaVu Sans Mono', monospace;
+			font-size:14px;
+			border-right:1px solid grey;
+		}
+
+
+		#box{
+			background-color:white;
+			width:100%;
+			height:100%;
+			max-height:100%;
+			max-width:100%;	
+		}
+
+
+		textarea:hover, 
+		input:hover, 
+		textarea:active, 
+		input:active, 
+		textarea:focus, 
+		input:focus,
+		button:focus,
+		button:active,
+		button:hover,
+		label:focus,
+		{
+		    outline:0px !important;
+		    -webkit-appearance:none;
+		}
+
+	</style>
+
+</head>
+
+<body onload='brython()'>
+
+	<div id='top_menu'>
+		<div id='buttons' class='top_menu_frame' title='Teclas F1, F2, F3, F4 y F5 respectivamente (Cuando el Editor tiene el Foco)'>
+			<button id='btnAbrir' class='top_buttom'>ABRIR</button>
+			<button id='btnGuardar' class='top_buttom'>GUARDAR</button>
+			<button id='btnGuardarComo' class='top_buttom'>GUARDAR COMO</button>
+			<button id='btnRun' class='top_buttom'>EJECUTAR</button>
+			<button id='btnStop' class='top_buttom'>PARAR</button>
+		</div>
+		<div class='top_menu_frame'>
+			<div id='div_file_path' title='Dirección del archivo actual'></div>
+			<button id='btn_stdout'>Mostrar Consola</button>
+		</div>
+	</div>
+
+	<div id='main'>
+
+		<textarea id='code_input' name='code' spellcheck='false' tabindex='0'></textarea>
+
+		<div id='right'>
+			<div class='pad_wrap'>
+				<iframe id='box' src='frame.html' frameBorder='0'></iframe>
+			</div>
+		</div>
+
+	</div>
+
+	<script>
+	  var editor = CodeMirror.fromTextArea(document.getElementById("code_input"), {
+	    mode: {name: "python",
+	           version: 3,
+	           singleLineStringErrors: false},
+	    lineNumbers: true,
+	    indentUnit: 4,
+	    matchBrackets: true
+	});
+
+	</script>
+
+	<script>
+
+		window.file_path = '';
+		/*
+		FUNCIONES EXPUESTAS AL SERVIDOR
+			DEFINIDAS EN EL CLIENTE
+			INVOCADAS EN EL SERVIDOR
+		*/
+
+		eel.expose(client_load_file)
+		function client_load_file(src, file_path){
+			// Obtiene el src y el file_path y los carga en el editor y el div_file_path
+			editor.setValue(src);
+			window.file_path = file_path;
+			document.getElementById('div_file_path').innerHTML = window.file_path;
+			document.getElementById('box').contentWindow.location.reload();
+			document.getElementById('btn_stdout').innerHTML = 'Mostrar Consola';
+		}
+
+		eel.expose(client_save_file)
+		function client_save_file(){
+			// Retorna al server el src del archivo a guardar
+			return editor.getValue();
+		}
+
+		eel.expose(window_file_path)
+		function window_file_path(file_path){
+			// Obtiene el file_path y lo almacena
+			window.file_path = file_path;
+			document.getElementById('div_file_path').innerHTML = window.file_path;
+		}
+
+		eel.expose(success_notify)
+		function success_notify(msg){alertify.success(msg)}
+
+		eel.expose(cancel_notify)
+		function cancel_notify(msg){alertify.cancel(msg)}
+
+		eel.expose(switch_buttons)
+		function switch_buttons(){
+			window.__switch_buttons();
+		}
+
+
+
+
+		// MOVIDA PARA QUE AL HACER RESIZE EN EL "editor, .CodeMirror" EL ANCHO DE "right" SE AJUSTE AL ESPACIO DISPONIBLE
+		var observer = new MutationObserver(function(mutations) {
+		    mutations.forEach(function(mutationRecord) {
+
+				var pixels = parseInt(target.style.width);
+
+				if (pixels > window.screen.width/2){
+					pixels = window.screen.width/2;
+					target.style.resize = 'none';
+				}
+
+				var ancho = window.screen.width - pixels;
+
+				document.getElementById('right').style.width = ancho + 'px';
+				target.style.width = pixels + 'px';
+
+		    });    
+		});
+
+		var target = document.getElementById('main').childNodes[2];
+		observer.observe(target, { attributes : true, attributeFilter : ['style'] });
+
+		target.addEventListener('click', function(e){target.style.resize = 'horizontal';})
+
+	</script>
+
+	<script type='text/python3' src='disable_defaults.py'></script>
+	<script type='text/python3'>
+
+		# IMPORTS
+		from browser import document, window
+		from browser.html import *
+
+		# VARIABLES
+		box = document['box']
+		editor = window.editor
+		btnRun = document['btnRun']
+		btnAbrir = document['btnAbrir']
+		btnGuardar = document['btnGuardar']
+		btnGuardarComo = document['btnGuardarComo']
+		btnStop = document['btnStop']
+		btn_stdout = document['btn_stdout']
+		eel = window.eel
+
+
+		# ALERTIFY
+
+		def _acept_save_confirm(e):
+			eel.sobreescribir_archivo(window.file_path, editor.getValue())
+			window.alertify.success('Archivo Guardado')
+
+		window._acept_save_confirm = _acept_save_confirm
+		window._cancel_save_confirm = lambda e: window.alertify.error('Archivo no Guardado')
+		save_confirm = lambda: window.alertify.confirm('¿SOBRESCRIBIR ARCHIVO?', document['div_file_path'].text, window._acept_save_confirm, window._cancel_save_confirm)
+
+
+
+		# FUNCIONES
+
+		def __switch_buttons():
+			btnRun.disabled = not btnRun.disabled
+			btnAbrir.disabled = not btnAbrir.disabled
+			btnGuardar.disabled = not btnGuardar.disabled
+			btnGuardarComo.disabled = not btnGuardarComo.disabled
+			btnStop.disabled = not btnStop.disabled
+
+		window.__switch_buttons = __switch_buttons
+
+
+		def open_file(ev):
+			if not btnAbrir.disabled:
+				if (ev.type == 'keydown' and ev.keyCode == 112) or ev.type == 'click':
+					eel.file_dialog('open')
+
+
+		def save_file(ev):
+			if not btnGuardar.disabled:
+
+				if ev.type == 'click':
+					if window.file_path:
+						save_confirm()
+					else:
+						eel.file_dialog('save')
+						
+
+				elif ev.type == 'keydown':
+					if (ev.keyCode == 83 and ev.ctrlKey) or ev.keyCode == 113:
+						ev.preventDefault()
+						if window.file_path:
+							save_confirm()
+						else:
+							eel.file_dialog('save')
+
+
+		def save_file_as(ev):
+			if not btnGuardarComo.disabled:
+				if (ev.type == 'keydown' and ev.keyCode == 114) or ev.type == 'click':
+					eel.file_dialog('save')
+						
+
+
+		def exec_code():
+			eel.sobreescribir_framepy(editor.getValue())
+			box.contentWindow.location.reload()
+			btn_stdout.text = 'Mostrar Consola'
+
+
+		def run_script(ev):
+			if not btnRun.disabled:
+				if ev.type == 'click':
+					exec_code()
+
+				elif ev.type == 'keydown':
+					if (ev.keyCode == 82 and ev.ctrlKey) or ev.keyCode == 115:
+						ev.preventDefault()
+						exec_code()
+
+
+		def swap(ev):
+			frame_btn_stdout = box.contentWindow.document.getElementById('btn_stdout')
+			frame_btn_stdout.click()
+			btn_stdout.text = frame_btn_stdout.text
+
+
+		def reset_box(ev):
+			if not btnStop.disabled:
+				if (ev.type == 'keydown' and ev.keyCode == 116) or ev.type == 'click':
+					eel.sobreescribir_framepy('')
+					box.contentWindow.location.reload()
+					btn_stdout.text = 'Mostrar Consola'
+
+
+
+
+
+
+		# BINDING
+		btnAbrir.bind('click', open_file)
+		document.bind('keydown', open_file)
+
+		btnGuardar.bind('click', save_file)
+		document.bind('keydown', save_file)
+
+		btnGuardarComo.bind('click', save_file_as)
+		document.bind('keydown', save_file_as)
+
+		btnRun.bind('click', run_script)
+		document.bind('keydown', run_script)
+
+		btnStop.bind('click', reset_box)
+		document.bind('keydown', reset_box)
+
+		btn_stdout.bind('click', swap)
+
+
+		# EEL SERVER CALL
+		eel.arg_file_loader()
+
+		editor.focus()
+		
+		'''
+		for btn in document['top_menu_frame'].childNodes:
+			btn.disabled = False
+		'''
+
+	</script>
+
+</body>
+
+</html>

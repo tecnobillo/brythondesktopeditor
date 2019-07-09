@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+
+<html lang='es'>
+
+<head>
+	<meta charset='utf-8'/>
+	<meta http-equiv="Cache-control" content="no-cache">
+	<script src='brython/brython.js'></script>
+	<script src='brython/brython_stdlib.js'></script>
+	<style>
+
+		body{
+			margin:0px;
+			padding:0px;
+		}
+
+
+		#btn_stdout{
+			/*
+			text-align:right;
+			position:fixed;
+			top:0px;
+			right:0px;
+			height:4%;
+			*/
+			display:none;
+
+		}
+
+		#stdout{
+			text-align:left;
+			position:fixed;
+			z-index:9999999;
+			bottom:0px;
+			right:0px;
+
+			width:40%;
+			height:90%;
+
+			background-color:#F5F5DC;
+			color:black;
+			overflow:auto;
+			font-family:'Oxygen Mono', Consolas, 'Liberation Mono', 'DejaVu Sans Mono', monospace;
+
+			margin:0px;
+			padding:10px;
+			border:0px;
+
+			display:none;
+
+		}
+
+	</style>
+
+</head>
+
+<body onload='brython();'>
+
+	<button id='btn_stdout'>Mostrar Consola</button>
+	<pre id='stdout'></pre>
+
+	<script type='text/python3'>
+
+		from browser import document, alert, window
+		import sys
+
+		btn_stdout = document['btn_stdout']
+		stdout = document['stdout']
+		stdout.style.display = 'none'
+
+
+
+		def swap(ev):
+
+			if stdout.style.display == 'none':
+
+				stdout.style.display = 'block'
+				btn_stdout.text = 'Ocultar Consola'
+
+			else:
+
+				stdout.style.display = 'none'
+				btn_stdout.text = 'Mostrar Consola'
+
+
+
+		btn_stdout.bind('click', swap)
+
+
+
+		################## ORDENAR LUEGO
+
+		class CustomStdOut:
+
+			console_output = document['stdout']
+
+			def write(self, txt):
+				self.console_output.html += txt
+				self.console_output.scrollTop = self.console_output.scrollHeight - self.console_output.clientHeight
+
+
+
+		custom_stdout = CustomStdOut()
+		sys.stdout = custom_stdout
+		sys.stderr = custom_stdout
+
+
+	</script>	
+
+	<script type='text/python3' src='disable_defaults.py'></script>
+	<script type='text/python3' src='frame.py'></script>
+
+</body>
+
+</html>
