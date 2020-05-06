@@ -1,5 +1,7 @@
 # brythondesktopeditor
 
+[DISCONTINUED]
+
 Brython Desktop Edtior is a Python code editor that runs in the Google Chrome browser in Kiosk mode.
 Use the interpreter Brython (Python in the Browser).
 
